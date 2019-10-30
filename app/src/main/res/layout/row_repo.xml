@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:padding="@dimen/lv_row_padding">
+
+    <ImageView
+        android:id="@+id/iv_repo_avatar"
+        android:layout_width="@dimen/lv_row_icon_width"
+        android:layout_height="@dimen/lv_row_icon_width"
+        android:src="@drawable/ic_launcher_foreground"
+        android:paddingLeft="@dimen/lv_row_icon_padding"
+        android:paddingRight="@dimen/lv_row_icon_padding"
+        android:contentDescription="@string/string_content_description"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:background="@drawable/ic_launcher_background"
+        />
+
+    <TextView
+        android:id="@+id/tv_track_details_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="@dimen/lv_row_text_size"
+        android:textColor="@android:color/black"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:text="Repo description"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toRightOf="@id/iv_repo_avatar"
+        android:paddingLeft="@dimen/lv_row_padding"
+        />
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

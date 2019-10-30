@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <include
+        android:id="@+id/main_empty"
+        layout="@layout/fragment_base_empty"/>
+
+    <include
+        android:id="@+id/main_error"
+        layout="@layout/fragment_base_error"/>
+
+    <include
+        android:id="@+id/main_loading"
+        layout="@layout/fragment_base_loading"/>
+
+    <include
+        android:id="@+id/main_no_connection"
+        layout="@layout/fragment_base_loading"/>
+
+</FrameLayout>
