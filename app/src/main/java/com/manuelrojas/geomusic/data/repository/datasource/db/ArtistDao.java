@@ -9,13 +9,15 @@ import com.manuelrojas.geomusic.data.entity.ArtistEntity;
 
 import java.util.List;
 
+import io.reactivex.Completable;
 import io.reactivex.Observable;
 
 @Dao
 public interface ArtistDao extends BaseDao<ArtistEntity> {
 
     @Query(value = "SELECT * FROM artist")
-    Observable<List<ArtistEntity>> getAllArtists();
+//    Observable<List<ArtistEntity>> getAllArtists();
+    List<ArtistEntity> getAllArtists();
 
     @Query(value = "SELECT * FROM artist WHERE mbid = :artistId")
     Observable<ArtistEntity> getArtistById(String artistId);
@@ -24,6 +26,6 @@ public interface ArtistDao extends BaseDao<ArtistEntity> {
     long insertReplace(ArtistEntity artistEntity);
 
     @Query("DELETE FROM artist")
-    public void deleteAllArtists();
+    Completable deleteAllArtists();
 
 }

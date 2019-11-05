@@ -1,5 +1,7 @@
 package com.manuelrojas.geomusic.data.repository;
 
+import android.util.Log;
+
 import com.manuelrojas.geomusic.data.entity.TrackEntity;
 import com.manuelrojas.geomusic.data.entity.mapper.TrackEntityDataMapper;
 import com.manuelrojas.geomusic.data.repository.datasource.TrackDataStore;
@@ -12,7 +14,11 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import io.reactivex.Completable;
 import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.Observer;
 
 public class TrackDataRepository implements TrackRepository {
 
@@ -38,15 +44,18 @@ public class TrackDataRepository implements TrackRepository {
                 if ( !isDbInView ) {
                     //App restart and Db has data. Get Db data
                     return getTracksFromDb()
+                            .doOnNext(t -> Log.d("TrackDataRepository", "getTracksFromDb: " + t.size()))
                             .map(t -> trackEntityDataMapper.transform(t));
                 } else {
                     //loadMore action. Get only the next page
                     return getTracksFromApi(currentPage)
+                            .doOnNext(t -> Log.d("TrackDataRepository", "getTracksFromApi: " + t.size()))
                             .map(t -> trackEntityDataMapper.transform(t));
                 }
             } else {
-                //First load
-                return getTracksFromApi(currentPage)
+                //First load or swipe refresh
+                return deleteTracksFromDb()
+                        .andThen(getTracksFromApi(currentPage))
                         .map(t -> trackEntityDataMapper.transform(t));
             }
         } else {
@@ -68,6 +77,10 @@ public class TrackDataRepository implements TrackRepository {
 
     private Observable<List<TrackEntity>> getTracksFromApi(int currentPage) {
         return syncApiTrack.syncTracks(currentPage);
+    }
+
+    private Completable deleteTracksFromDb() {
+        return trackDataStore.deleteAllTracks();
     }
 
 }

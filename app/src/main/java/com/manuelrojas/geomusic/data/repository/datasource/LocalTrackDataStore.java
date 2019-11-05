@@ -7,7 +7,10 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import io.reactivex.Completable;
 import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
 
 public class LocalTrackDataStore implements TrackDataStore {
 
@@ -18,9 +21,20 @@ public class LocalTrackDataStore implements TrackDataStore {
         this.trackDao = trackDao;
     }
 
+//    @Override
+//    public Observable<List<TrackEntity>> findAll() {
+//        return trackDao.getAllTracks();
+//    }
+
     @Override
     public Observable<List<TrackEntity>> findAll() {
-        return trackDao.getAllTracks();
+        return Observable.create(new ObservableOnSubscribe<List<TrackEntity>>() {
+            @Override
+            public void subscribe(ObservableEmitter<List<TrackEntity>> emitter) {
+                emitter.onNext(trackDao.getAllTracks());
+                emitter.onComplete();
+            }
+        });
     }
 
     @Override
@@ -36,5 +50,10 @@ public class LocalTrackDataStore implements TrackDataStore {
     @Override
     public void update(TrackEntity track) {
         trackDao.update(track);
+    }
+
+    @Override
+    public Completable deleteAllTracks() {
+        return trackDao.deleteAllTracks();
     }
 }

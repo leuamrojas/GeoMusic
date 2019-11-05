@@ -4,6 +4,7 @@ import com.manuelrojas.geomusic.data.entity.ArtistEntity;
 
 import java.util.List;
 
+import io.reactivex.Completable;
 import io.reactivex.Observable;
 
 public interface ArtistDataStore {
@@ -15,4 +16,6 @@ public interface ArtistDataStore {
     long save(ArtistEntity artist);
 
     void update(ArtistEntity artist);
+
+    Completable deleteAllArtists();
 }

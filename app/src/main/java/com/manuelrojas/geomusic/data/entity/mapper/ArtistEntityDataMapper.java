@@ -43,7 +43,8 @@ public class ArtistEntityDataMapper {
      * @return {@link Artist} if valid {@link ArtistEntity} otherwise null.
      */
     public List<Artist> transform(Collection<ArtistEntity> artistEntityCollection) {
-        final List<Artist> artistList = new ArrayList<>(20);
+//        final List<Artist> artistList = new ArrayList<>(20);
+        List<Artist> artistList = new ArrayList<>(20);
         for (ArtistEntity artistEntity : artistEntityCollection) {
             Artist artist = transform(artistEntity);
             if (artist != null) {

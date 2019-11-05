@@ -4,6 +4,7 @@ import com.manuelrojas.geomusic.data.entity.TrackEntity;
 
 import java.util.List;
 
+import io.reactivex.Completable;
 import io.reactivex.Observable;
 
 public interface TrackDataStore {
@@ -15,4 +16,6 @@ public interface TrackDataStore {
     long save(TrackEntity track);
 
     void update(TrackEntity track);
+
+    Completable deleteAllTracks();
 }

@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.View;
@@ -32,11 +33,15 @@ import com.google.android.material.tabs.TabLayout;
 public class TrackListActivity extends BaseActivity implements HasComponent<TrackComponent>,
         TrackListFragment.TrackListListener, ArtistListFragment.ArtistListListener {
 
+    private SearchView searchView;
+
     public static Intent getCallingIntent(Context context) {
         return new Intent(context, TrackListActivity.class);
     }
 
     private TrackComponent trackComponent;
+
+    private static final String SEARCH_QUERY = "search_query";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,7 +50,9 @@ public class TrackListActivity extends BaseActivity implements HasComponent<Trac
 
         this.initializeInjector();
         ActionBar actionBar = getSupportActionBar();
-        actionBar.setTitle(getResources().getString(R.string.app_name));
+        if (actionBar != null) {
+            actionBar.setTitle(getResources().getString(R.string.app_name));
+        }
         setViewPager();
     }
 
@@ -62,13 +69,10 @@ public class TrackListActivity extends BaseActivity implements HasComponent<Trac
         inflater.inflate(R.menu.options_menu, menu);
 
         // Associate searchable configuration with the SearchView
-        SearchManager searchManager =
-                (SearchManager) getSystemService(SEARCH_SERVICE);
-        SearchView searchView =
-                (SearchView) menu.findItem(R.id.search).getActionView();
-        searchView.setSearchableInfo(
-                searchManager.getSearchableInfo(getComponentName()));
-        setupSearchView(searchView);
+        SearchManager searchManager = (SearchManager) getSystemService(SEARCH_SERVICE);
+        searchView = (SearchView) menu.findItem(R.id.search).getActionView();
+        searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
+        setupSearchView();
 
         return true;
     }
@@ -84,11 +88,23 @@ public class TrackListActivity extends BaseActivity implements HasComponent<Trac
     }
 
     @Override
+    public void onSearchViewClicked() {
+        Log.d("TrackListActivity", "onSearchViewClicked");
+        searchView.setIconified(true);
+    }
+
+    @Override
+    public void onSearchViewArtistClicked() {
+        Log.d("TrackListActivity", "onSearchViewArtistClicked");
+        searchView.setIconified(true);
+    }
+
+    @Override
     public void onArtistClicked(ArtistModel artistModel) {
         navigator.navigateToArtistDetails(this, artistModel);
     }
 
-    private void setupSearchView(SearchView searchView) {
+    private void setupSearchView() {
 
         Fragment page1 = getSupportFragmentManager().findFragmentByTag("android:switcher:" + R.id.view_pager + ":" + 0);
         Fragment page2 = getSupportFragmentManager().findFragmentByTag("android:switcher:" + R.id.view_pager + ":" + 1);
@@ -115,21 +131,16 @@ public class TrackListActivity extends BaseActivity implements HasComponent<Trac
             }
         });
 
-        searchView.setOnSearchClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                trackListFragment.setSearchViewOpen(true);
-                artistListFragment.setSearchViewOpen(true);
-            }
+        searchView.setOnSearchClickListener(view -> {
+            trackListFragment.setSearchViewOpen(true);
+            artistListFragment.setSearchViewOpen(true);
         });
 
-        searchView.setOnCloseListener(new SearchView.OnCloseListener() {
-            @Override
-            public boolean onClose() {
-                trackListFragment.setSearchViewOpen(false);
-                artistListFragment.setSearchViewOpen(false);
-                return false;
-            }
+        searchView.setOnCloseListener(() -> {
+            trackListFragment.setSearchViewOpen(false);
+            artistListFragment.setSearchViewOpen(false);
+            trackListFragment.filterAdapterView("");
+            return false;
         });
 
         setSearchTextColor(searchView);
@@ -166,6 +177,9 @@ public class TrackListActivity extends BaseActivity implements HasComponent<Trac
         tabs.setupWithViewPager(viewPager);
     }
 
-
-
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString(SEARCH_QUERY, searchView.getQuery().toString());
+    }
 }

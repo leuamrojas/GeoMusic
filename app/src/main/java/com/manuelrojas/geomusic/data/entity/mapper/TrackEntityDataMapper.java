@@ -48,7 +48,7 @@ public class TrackEntityDataMapper {
      * @return {@link Track} if valid {@link TrackEntity} otherwise null.
      */
     public List<Track> transform(Collection<TrackEntity> trackEntityCollection) {
-        final List<Track> trackList = new ArrayList<>(20);
+        List<Track> trackList = new ArrayList<>(20);
         for (TrackEntity trackEntity : trackEntityCollection) {
             Track track = transform(trackEntity);
             if (track != null) {

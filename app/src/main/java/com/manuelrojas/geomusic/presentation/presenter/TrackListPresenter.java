@@ -55,11 +55,13 @@ public class TrackListPresenter implements Presenter<TrackListView> {
     }
 
     private void hideViewLoading() {
-        view.hideLoading();
+        if (page==1)
+            view.hideLoading();
     }
 
     private void showViewRetry() {
-        view.showRetry();
+        if (page==1)
+            view.showRetry();
     }
 
     private void hideViewRetry() {
@@ -83,23 +85,18 @@ public class TrackListPresenter implements Presenter<TrackListView> {
         @Override
         public void onNext(List<Track> tracks) {
             showTracksCollectionInView(tracks);
-            if (page==1)
-                hideViewLoading();
+            hideViewLoading();
         }
 
         @Override
         public void onComplete() {
-            if (page==1)
-                hideViewLoading();
-
+            hideViewLoading();
         }
 
         @Override
         public void onError(Throwable e) {
-            if (page==1) {
-                hideViewLoading();
-                showViewRetry();
-            }
+            hideViewLoading();
+            showViewRetry();
             showErrorMessage(new DefaultErrorBundle((Exception) e));
         }
     }

@@ -55,11 +55,13 @@ public class ArtistListPresenter implements Presenter<ArtistListView> {
     }
 
     private void hideViewLoading() {
-        view.hideLoading();
+        if (page==1)
+            view.hideLoading();
     }
 
     private void showViewRetry() {
-        view.showRetry();
+        if (page==1)
+            view.showRetry();
     }
 
     private void hideViewRetry() {
@@ -83,23 +85,21 @@ public class ArtistListPresenter implements Presenter<ArtistListView> {
         @Override
         public void onNext(List<Artist> artists) {
             showArtistsCollectionInView(artists);
-            if (page==1)
+//            if (page==1)
                 hideViewLoading();
         }
 
         @Override
         public void onComplete() {
-            if (page==1)
+//            if (page==1)
                 hideViewLoading();
 
         }
 
         @Override
         public void onError(Throwable e) {
-            if (page==1) {
-                hideViewLoading();
-                showViewRetry();
-            }
+            hideViewLoading();
+            showViewRetry();
             showErrorMessage(new DefaultErrorBundle((Exception) e));
         }
     }

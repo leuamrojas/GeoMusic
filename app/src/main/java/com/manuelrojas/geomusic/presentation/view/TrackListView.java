@@ -12,4 +12,6 @@ public interface TrackListView extends LoadDataView{
 
     void hideRetry();
 
+    void hideLoadingRow();
+
 }

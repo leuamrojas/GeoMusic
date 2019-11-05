@@ -7,7 +7,10 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import io.reactivex.Completable;
 import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
 
 public class LocalArtistDataStore implements ArtistDataStore {
 
@@ -20,7 +23,15 @@ public class LocalArtistDataStore implements ArtistDataStore {
 
     @Override
     public Observable<List<ArtistEntity>> findAll() {
-        return artistDao.getAllArtists();
+//        return artistDao.getAllArtists();
+        return Observable.create(new ObservableOnSubscribe<List<ArtistEntity>>() {
+            @Override
+            public void subscribe(ObservableEmitter<List<ArtistEntity>> emitter) {
+                emitter.onNext(artistDao.getAllArtists());
+                emitter.onComplete();
+            }
+        });
+
     }
 
     @Override
@@ -36,6 +47,11 @@ public class LocalArtistDataStore implements ArtistDataStore {
     @Override
     public void update(ArtistEntity artist) {
         artistDao.update(artist);
+    }
+
+    @Override
+    public Completable deleteAllArtists() {
+        return artistDao.deleteAllArtists();
     }
 
 

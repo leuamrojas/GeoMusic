@@ -1,5 +1,6 @@
 package com.manuelrojas.geomusic.presentation.view.adapter;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -53,11 +54,9 @@ public class TrackListAdapter extends RecyclerView.Adapter<BaseViewHolder> imple
             case VIEW_TYPE_NORMAL:
                 return new TrackViewHolder(
                         LayoutInflater.from(parent.getContext()).inflate(R.layout.row_track, parent, false));
-            case VIEW_TYPE_LOADING:
-                return new ProgressHolder(
-                        LayoutInflater.from(parent.getContext()).inflate(R.layout.view_progress, parent, false));
             default:
-                return null;
+                return new ProgressViewHolder(
+                        LayoutInflater.from(parent.getContext()).inflate(R.layout.row_progress, parent, false));
         }
     }
 
@@ -102,13 +101,69 @@ public class TrackListAdapter extends RecyclerView.Adapter<BaseViewHolder> imple
     /*
     Pagination helpers
      */
+//    public void addItems(Collection<TrackModel> trackModelCollection) {
+//        this.validateTrackModelCollection(trackModelCollection);
+//        List<TrackModel> newList = new ArrayList<>(trackModelList);
+//        trackModelList = new ArrayList<>(newList);
+//        trackModelList.addAll(trackModelCollection);
+//        originalData = trackModelList;
+//        this.notifyDataSetChanged();
+//    }
+
+//    public void addItems(Collection<TrackModel> trackModelCollection) {
+//        this.validateTrackModelCollection(trackModelCollection);
+//        trackModelList.addAll(trackModelCollection);
+//        originalData = trackModelList;
+//        notifyDataSetChanged();
+//    }
+
+//    public void setTracksCollection(Collection<TrackModel> trackModelCollection) {
+//        this.validateTrackModelCollection(trackModelCollection);
+//        this.trackModelList = (List<TrackModel>) trackModelCollection;
+////        setRowHeaders();
+//        originalData = trackModelList;
+////        this.fixtureType = fixtureType;
+//        this.notifyDataSetChanged();
+//    }
+
     public void addItems(Collection<TrackModel> trackModelCollection) {
         this.validateTrackModelCollection(trackModelCollection);
         List<TrackModel> newList = new ArrayList<>(trackModelList);
         trackModelList = new ArrayList<>(newList);
         trackModelList.addAll(trackModelCollection);
         originalData = trackModelList;
+        Log.d(TAG, "trackModelList: " + trackModelList.size());
         this.notifyDataSetChanged();
+    }
+
+//    public void addLoading() {
+//        isLoadingAdded = true;
+//        trackModelList.add(new TrackModel());
+//        notifyItemInserted(trackModelList.size() - 1);
+//    }
+//
+//    public void removeLoading() {
+//        isLoadingAdded = false;
+//        int position = trackModelList.size() - 1;
+////        Log.d(TAG, "trackModelList.size(): " + trackModelList.size());
+//        TrackModel item = getItem(position);
+//        if (item != null && item.getName()==null) {
+//            Log.d(TAG, "TrackModel Loading: " + item.getName());
+//            trackModelList.remove(position);
+//            notifyItemRemoved(position);
+//        }
+//    }
+
+    public void clear() {
+        Log.d(TAG, "clear before: " + trackModelList.size());
+        trackModelList.clear();
+        originalData = trackModelList;
+        Log.d(TAG, "clear after: " + trackModelList.size());
+        notifyDataSetChanged();
+    }
+
+    TrackModel getItem(int position) {
+        return trackModelList.get(position);
     }
 
     class TrackViewHolder extends BaseViewHolder {
@@ -143,8 +198,8 @@ public class TrackListAdapter extends RecyclerView.Adapter<BaseViewHolder> imple
         }
     }
 
-    static class ProgressHolder extends BaseViewHolder {
-        ProgressHolder(View itemView) {
+    static class ProgressViewHolder extends BaseViewHolder {
+        ProgressViewHolder(View itemView) {
             super(itemView);
             ButterKnife.bind(this, itemView);
         }

@@ -12,13 +12,14 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import io.reactivex.Completable;
 import io.reactivex.Observable;
 
 public class ArtistDataRepository implements ArtistRepository {
 
-    ArtistDataStore artistDataStore;
-    SyncApiArtist syncApiArtist;
-    ArtistEntityDataMapper artistEntityDataMapper;
+    private ArtistDataStore artistDataStore;
+    private SyncApiArtist syncApiArtist;
+    private ArtistEntityDataMapper artistEntityDataMapper;
 
     @Inject
     NetworkUtil networkUtil;
@@ -35,16 +36,20 @@ public class ArtistDataRepository implements ArtistRepository {
     public Observable<List<Artist>> getArtists(int currentPage, boolean isDbInView) {
         if (networkUtil.isNetworkConnected()) {
             if (currentPage > 1) {
-                if ( !isDbInView ) { //App restart and Db has data. Get Db data
+                if ( !isDbInView ) {
+                    //App restart and Db has data. Get Db data
                     return getArtistsFromDb()
                             .map(t -> artistEntityDataMapper.transform(t));
 
-                } else {    //loadMore action. Get only the next page
+                } else {
+                    //loadMore action. Get only the next page
                     return getArtistsFromApi(currentPage)
                             .map(t -> artistEntityDataMapper.transform(t));
                 }
-            } else {    //First load
-                return getArtistsFromApi(currentPage)
+            } else {
+                //First load or swipe refresh
+                return deleteArtistsFromDb()
+                        .andThen(getArtistsFromApi(currentPage))
                         .map(t -> artistEntityDataMapper.transform(t));
             }
         } else {    //Work with offline data
@@ -65,5 +70,9 @@ public class ArtistDataRepository implements ArtistRepository {
 
     private Observable<List<ArtistEntity>> getArtistsFromApi(int currentPage) {
         return syncApiArtist.syncArtists(currentPage);
+    }
+
+    private Completable deleteArtistsFromDb() {
+        return artistDataStore.deleteAllArtists();
     }
 }

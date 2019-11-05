@@ -6,10 +6,14 @@ import android.content.Context;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.DefaultItemAnimator;
+import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -35,7 +39,8 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 import butterknife.Unbinder;
 
-public class ArtistListFragment extends BaseFragment implements ArtistListView {
+public class ArtistListFragment extends BaseFragment implements ArtistListView,
+        SwipeRefreshLayout.OnRefreshListener {
 
 
     private static final String TAG = "ArtistListFragment";
@@ -45,6 +50,7 @@ public class ArtistListFragment extends BaseFragment implements ArtistListView {
      */
     public interface ArtistListListener {
         void onArtistClicked(final ArtistModel artistModel);
+        void onSearchViewArtistClicked();
     }
 
     @Inject
@@ -74,11 +80,12 @@ public class ArtistListFragment extends BaseFragment implements ArtistListView {
 
     private static final String PREFS_PAGE_ARTIST = "prefsPageArtist";
 
-//    @BindView(R.id.swipeRefresh)
-//    SwipeRefreshLayout swipeRefresh;
+    @BindView(R.id.swipeRefreshArtist)
+    SwipeRefreshLayout swipeRefresh;
 
     private ArtistListListener artistListListener;
     private Unbinder unbinder;
+    private boolean refreshing = false;
 
     private LinearLayoutManager layoutManager;
 
@@ -138,6 +145,15 @@ public class ArtistListFragment extends BaseFragment implements ArtistListView {
     }
 
     @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        if (savedInstanceState != null) {
+            filterAdapterView("");
+            setSearchViewOpen(false);
+        }
+    }
+
+    @Override
     public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putInt(PREFS_PAGE_ARTIST, pageArtist);
@@ -163,23 +179,33 @@ public class ArtistListFragment extends BaseFragment implements ArtistListView {
     }
 
     @Override public void showLoading() {
-        this.rlProgress.setVisibility(View.VISIBLE);
-        this.getActivity().setProgressBarIndeterminateVisibility(true);
+        if ( !refreshing ) {
+            this.rlProgress.setVisibility(View.VISIBLE);
+            this.getActivity().setProgressBarIndeterminateVisibility(true);
+        }
     }
 
     @Override public void hideLoading() {
-        this.rlProgress.setVisibility(View.GONE);
-        this.getActivity().setProgressBarIndeterminateVisibility(false);
+//        this.rlProgress.setVisibility(View.GONE);
+//        this.getActivity().setProgressBarIndeterminateVisibility(false);
+        if ( !refreshing ) {
+            this.rlProgress.setVisibility(View.GONE);
+            this.getActivity().setProgressBarIndeterminateVisibility(false);
+        } else {
+            swipeRefresh.setRefreshing(false);
+            refreshing = false;
+        }
     }
 
     @Override
     public void renderArtistList(Collection<ArtistModel> artistModelCollection) {
         if (artistModelCollection != null) {
-            if (pageArtist ==1) {
-                renderFirstPage(artistModelCollection);
-            } else {
-                renderNextPage(artistModelCollection);
-            }
+//            if (pageArtist ==1) {
+//                renderFirstPage(artistModelCollection);
+//            } else {
+//                renderNextPage(artistModelCollection);
+//            }
+            renderPage(artistModelCollection);
         }
     }
 
@@ -204,14 +230,22 @@ public class ArtistListFragment extends BaseFragment implements ArtistListView {
     }
 
     private void setupRecyclerView() {
-//        swipeRefresh.setOnRefreshListener(this);
+        setSwipeRefresh();
         this.artistListAdapter.setOnItemClickListener(onItemClickListener);
         this.rvArtists.setHasFixedSize(true);
         layoutManager = new LinearLayoutManager(context());
         this.rvArtists.setLayoutManager(layoutManager);
         this.rvArtists.setItemAnimator(new DefaultItemAnimator());
+        DividerItemDecoration dividerItemDecoration =
+                new DividerItemDecoration(rvArtists.getContext(), layoutManager.getOrientation());
+        rvArtists.addItemDecoration(dividerItemDecoration);
         this.rvArtists.setAdapter(artistListAdapter);
         setupOnScrollListener();
+    }
+
+    private void setSwipeRefresh() {
+        swipeRefresh.setOnRefreshListener(this);
+        swipeRefresh.setColorSchemeResources(R.color.colorAccent);
     }
 
     private void setupOnScrollListener() {
@@ -242,28 +276,63 @@ public class ArtistListFragment extends BaseFragment implements ArtistListView {
         });
     }
 
-    private void renderFirstPage(Collection<ArtistModel> artistModels) {
-        artistListAdapter.addItems(artistModels);
-        sharedPrefsUtil.put(PREFS_PAGE_ARTIST, pageArtist);
-//        if (pageArtist <= TOTAL_PAGES)
-//            artistListAdapter.addLoading();
-//        else
+//    private void renderFirstPage(Collection<ArtistModel> artistModels) {
+//        artistListAdapter.addItems(artistModels);
+//        sharedPrefsUtil.put(PREFS_PAGE_ARTIST, pageArtist);
+////        if (pageArtist <= TOTAL_PAGES)
+////            artistListAdapter.addLoading();
+////        else
+////            isLastPage = true;
+//        if (pageArtist == TOTAL_PAGES)
 //            isLastPage = true;
-        if (pageArtist == TOTAL_PAGES)
+//    }
+//
+//    private void renderNextPage(Collection<ArtistModel> artistModels) {
+//        isLoading = false;
+//        artistListAdapter.addItems(artistModels);
+//        sharedPrefsUtil.put(PREFS_PAGE_ARTIST, pageArtist);
+////        if (pageArtist != TOTAL_PAGES)
+////            artistListAdapter.addLoading();
+////        else
+////            isLastPage = true;
+//        if (pageArtist == TOTAL_PAGES)
+//            isLastPage = true;
+//    }
+
+    private void renderPage(Collection<ArtistModel> artistModels) {
+        Log.d(TAG, "renderPage page: " + pageArtist);
+        Log.d(TAG, "renderPage size: " + artistModels.size());
+
+        //Manage progress view
+//        if (pageArtist != PAGE_START && artistListAdapter.getItemCount()>0)
+//            trackListAdapter.removeLoading();
+
+        artistListAdapter.addItems(artistModels);
+//        trackListAdapter.setTracksCollection(trackModels);
+        sharedPrefsUtil.put(PREFS_PAGE_ARTIST, pageArtist);
+
+        // check weather is last page or not
+        if (pageArtist < TOTAL_PAGES) {
+//            trackListAdapter.addLoading();
+        } else {
             isLastPage = true;
+        }
+        isLoading = false;
+        if (swipeRefresh.isRefreshing())
+            swipeRefresh.setRefreshing(false);
     }
 
-    private void renderNextPage(Collection<ArtistModel> artistModels) {
-        isLoading = false;
-        artistListAdapter.addItems(artistModels);
-        sharedPrefsUtil.put(PREFS_PAGE_ARTIST, pageArtist);
-//        if (pageArtist != TOTAL_PAGES)
-//            artistListAdapter.addLoading();
-//        else
-//            isLastPage = true;
-        if (pageArtist == TOTAL_PAGES)
-            isLastPage = true;
+    @Override
+    public void onRefresh() {
+        pageArtist = PAGE_START;
+        isLastPage = false;
+        refreshing = true;
+        artistListAdapter.clear();
+        filterAdapterView("");
+        artistListListener.onSearchViewArtistClicked();
+        loadArtistList();
     }
+
 
     /**
      * Loads next page of artists.
@@ -293,6 +362,12 @@ public class ArtistListFragment extends BaseFragment implements ArtistListView {
 
     public void setSearchViewOpen(boolean open) {
         searchViewOpen = open;
+//        if (searchViewOpen) {
+//            if (trackListAdapter.getItemCount()>0)
+//                trackListAdapter.removeLoading();
+//        } else {
+//            trackListAdapter.addLoading();
+//        }
     }
 
 }

@@ -1,5 +1,6 @@
 package com.manuelrojas.geomusic.presentation.view.adapter;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -53,11 +54,9 @@ public class ArtistListAdapter extends RecyclerView.Adapter<BaseViewHolder> impl
             case VIEW_TYPE_NORMAL:
                 return new ArtistViewHolder(
                         LayoutInflater.from(parent.getContext()).inflate(R.layout.row_artist, parent, false));
-            case VIEW_TYPE_LOADING:
+            default:
                 return new ProgressHolder(
                         LayoutInflater.from(parent.getContext()).inflate(R.layout.view_progress, parent, false));
-            default:
-                return null;
         }
     }
 
@@ -109,6 +108,14 @@ public class ArtistListAdapter extends RecyclerView.Adapter<BaseViewHolder> impl
         this.artistModelList.addAll(artistModelCollection);
         this.originalData = artistModelList;
         this.notifyDataSetChanged();
+    }
+
+    public void clear() {
+        Log.d(TAG, "clear before: " + artistModelList.size());
+        artistModelList.clear();
+        originalData = artistModelList;
+        Log.d(TAG, "clear after: " + artistModelList.size());
+        notifyDataSetChanged();
     }
 
     class ArtistViewHolder extends BaseViewHolder {

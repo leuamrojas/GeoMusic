@@ -5,10 +5,14 @@ import android.content.Context;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.DefaultItemAnimator;
+import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -34,7 +38,8 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 import butterknife.Unbinder;
 
-public class TrackListFragment extends BaseFragment implements TrackListView {
+public class TrackListFragment extends BaseFragment implements TrackListView,
+        SwipeRefreshLayout.OnRefreshListener {
 
     private static final String TAG = "TrackListFragment";
 
@@ -43,6 +48,7 @@ public class TrackListFragment extends BaseFragment implements TrackListView {
      */
     public interface TrackListListener {
         void onTrackClicked(final TrackModel trackModel);
+        void onSearchViewClicked();
     }
 
     @Inject
@@ -71,11 +77,12 @@ public class TrackListFragment extends BaseFragment implements TrackListView {
     private boolean searchViewOpen = false;
     private static final String PREFS_PAGE_TRACK = "prefsPageTrack";
 
-//    @BindView(R.id.swipeRefresh)
-//    SwipeRefreshLayout swipeRefresh;
+    @BindView(R.id.swipeRefresh)
+    SwipeRefreshLayout swipeRefresh;
 
     private TrackListListener trackListListener;
     private Unbinder unbinder;
+    private boolean refreshing = false;
 
     private LinearLayoutManager layoutManager;
 
@@ -131,6 +138,15 @@ public class TrackListFragment extends BaseFragment implements TrackListView {
     }
 
     @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        if (savedInstanceState != null) {
+            filterAdapterView("");
+            setSearchViewOpen(false);
+        }
+    }
+
+    @Override
     public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putInt(PREFS_PAGE_TRACK, pageTrack);
@@ -154,23 +170,31 @@ public class TrackListFragment extends BaseFragment implements TrackListView {
     }
 
     @Override public void showLoading() {
-        this.rlProgress.setVisibility(View.VISIBLE);
-        this.getActivity().setProgressBarIndeterminateVisibility(true);
+        if ( !refreshing ) {
+            this.rlProgress.setVisibility(View.VISIBLE);
+            this.getActivity().setProgressBarIndeterminateVisibility(true);
+        }
     }
 
     @Override public void hideLoading() {
-        this.rlProgress.setVisibility(View.GONE);
-        this.getActivity().setProgressBarIndeterminateVisibility(false);
+        if ( !refreshing ) {
+            this.rlProgress.setVisibility(View.GONE);
+            this.getActivity().setProgressBarIndeterminateVisibility(false);
+        } else {
+            swipeRefresh.setRefreshing(false);
+            refreshing = false;
+        }
     }
 
     @Override
     public void renderTrackList(Collection<TrackModel> trackModelCollection) {
         if (trackModelCollection != null) {
-            if (pageTrack ==1) {
-                renderFirstPage(trackModelCollection);
-            } else {
-                renderNextPage(trackModelCollection);
-            }
+//            if (pageTrack ==1) {
+//                renderFirstPage(trackModelCollection);
+//            } else {
+//                renderNextPage(trackModelCollection);
+//            }
+            renderPage(trackModelCollection);
         }
     }
 
@@ -191,14 +215,22 @@ public class TrackListFragment extends BaseFragment implements TrackListView {
     }
 
     private void setupRecyclerView() {
-//        swipeRefresh.setOnRefreshListener(this);
+        setSwipeRefresh();
         this.trackListAdapter.setOnItemClickListener(onItemClickListener);
         this.rvTracks.setHasFixedSize(true);
         layoutManager = new LinearLayoutManager(context());
         this.rvTracks.setLayoutManager(layoutManager);
         this.rvTracks.setItemAnimator(new DefaultItemAnimator());
+        DividerItemDecoration dividerItemDecoration =
+                new DividerItemDecoration(rvTracks.getContext(), layoutManager.getOrientation());
+        rvTracks.addItemDecoration(dividerItemDecoration);
         this.rvTracks.setAdapter(trackListAdapter);
         setupOnScrollListener();
+    }
+
+    private void setSwipeRefresh() {
+        swipeRefresh.setOnRefreshListener(this);
+        swipeRefresh.setColorSchemeResources(R.color.colorAccent);
     }
 
     private void setupOnScrollListener() {
@@ -229,31 +261,45 @@ public class TrackListFragment extends BaseFragment implements TrackListView {
         });
     }
 
-    private void renderFirstPage(Collection<TrackModel> trackModels) {
+    private void renderPage(Collection<TrackModel> trackModels) {
+        Log.d(TAG, "renderPage page: " + pageTrack);
+        Log.d(TAG, "renderPage size: " + trackModels.size());
+
+        //Manage progress view
+        if (pageTrack != PAGE_START && trackListAdapter.getItemCount()>0){}
+//            trackListAdapter.removeLoading();
+
         trackListAdapter.addItems(trackModels);
+//        trackListAdapter.setTracksCollection(trackModels);
         sharedPrefsUtil.put(PREFS_PAGE_TRACK, pageTrack);
 
-//        if (pageTrack <= TOTAL_PAGES)
+        // check weather is last page or not
+        if (pageTrack < TOTAL_PAGES) {
 //            trackListAdapter.addLoading();
-//        else
-//            isLastPage = true;
-        if (pageTrack == TOTAL_PAGES)
+        } else {
             isLastPage = true;
-    }
-
-    private void renderNextPage(Collection<TrackModel> trackModels) {
+        }
         isLoading = false;
-        trackListAdapter.addItems(trackModels);
-        sharedPrefsUtil.put(PREFS_PAGE_TRACK, pageTrack);
-
-//        if (pageTrack != TOTAL_PAGES)
-//            trackListAdapter.addLoading();
-//        else
-//            isLastPage = true;
-        if (pageTrack == TOTAL_PAGES)
-            isLastPage = true;
+        if (swipeRefresh.isRefreshing())
+            swipeRefresh.setRefreshing(false);
     }
 
+    @Override
+    public void hideLoadingRow() {
+//        if (pageTrack != PAGE_START)
+//            trackListAdapter.removeLoading();
+    }
+
+    @Override
+    public void onRefresh() {
+        pageTrack = PAGE_START;
+        isLastPage = false;
+        refreshing = true;
+        trackListAdapter.clear();
+        filterAdapterView("");
+        trackListListener.onSearchViewClicked();
+        loadTrackList();
+    }
 
     /**
      * Loads next page of tracks.
@@ -283,6 +329,12 @@ public class TrackListFragment extends BaseFragment implements TrackListView {
 
     public void setSearchViewOpen(boolean open) {
         searchViewOpen = open;
+        if (searchViewOpen) {
+//            if (trackListAdapter.getItemCount()>0)
+//                trackListAdapter.removeLoading();
+        } else {
+//            trackListAdapter.addLoading();
+        }
     }
 
 }

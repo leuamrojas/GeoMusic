@@ -9,13 +9,15 @@ import com.manuelrojas.geomusic.data.entity.TrackEntity;
 
 import java.util.List;
 
+import io.reactivex.Completable;
 import io.reactivex.Observable;
 
 @Dao
 public interface TrackDao extends BaseDao<TrackEntity> {
 
     @Query(value = "SELECT * FROM track")
-    Observable<List<TrackEntity>> getAllTracks();
+//    Observable<List<TrackEntity>> getAllTracks();
+    List<TrackEntity> getAllTracks();
 
     @Query(value = "SELECT * FROM track WHERE id = :trackId")
     Observable<TrackEntity> getTrackById(String trackId);
@@ -27,6 +29,6 @@ public interface TrackDao extends BaseDao<TrackEntity> {
     long insertReplace(TrackEntity trackEntity);
 
     @Query("DELETE FROM track")
-    public void deleteAllTracks();
+    Completable deleteAllTracks();
 
 }
